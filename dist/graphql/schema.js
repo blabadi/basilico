@@ -8,14 +8,11 @@ const apollo_server_express_1 = require("apollo-server-express");
 const resolvers_1 = __importDefault(require("./resolvers"));
 const types_1 = require("./types");
 const models_1 = __importDefault(require("../models"));
-require("dotenv").config();
 const SECRET = process.env.SECRET;
 // GraphQL server
 const graphQLServer = new apollo_server_express_1.ApolloServer({
     context: ({ req, res }) => ({
-        models: models_1.default,
-        SECRET,
-        user: req.user
+        models: models_1.default
     }),
     introspection: true,
     playground: true,

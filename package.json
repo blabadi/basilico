@@ -20,8 +20,7 @@
   "license": "AGPL3",
   "dependencies": {
     "@types/dotenv": "^4.0.3",
-    "@types/graphql": "^14.0.3",
-    "apollo-server-express": "^2.2.5",
+    "apollo-server": "^2.7.0",
     "bcrypt": "^3.0.5",
     "dotenv": "^6.1.0",
     "express": "^4.16.4",
@@ -31,11 +30,17 @@
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.11",
     "mongoose": "^5.4.20",
+    "connect-mongo": "^3.0.0",
     "morgan": "^1.9.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.5",
+    "@types/graphql": "^14.2.2",
     "@types/jest": "^23.3.7",
+    "@types/lodash": "^4.14.136",
+    "@types/mongodb": "^3.1.28",
+    "@types/mongoose": "^5.5.9",
+    "@types/morgan": "^1.7.36",
     "concurrently": "^4.1.0",
     "husky": "^1.1.2",
     "jest": "^23.6.0",

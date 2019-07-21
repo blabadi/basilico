@@ -1,46 +1,46 @@
 // Imports
 import cors from "cors"
 import * as dotenv from 'dotenv'
+const env = dotenv.config()
 import express from 'express'
 import { createServer } from 'http'
 import morgan from 'morgan'
-import mongoose from 'mongoose'
-import graphQLServer from './graphql/schema'
-import auth from './services/auth'
-import models from './models/index'
+import mongo from "mongodb";
+import { ApolloServer } from "apollo-server";
+import resolvers from "./graphql/resolvers";
+import { typeDefs } from "./graphql/types";
 
-// Environment variables
-const env = dotenv.config()
-console.log(process.env.MONGO_URL);
+let graphQLServer: ApolloServer | undefined;
+
+const startGraphql = async () => {
+
+  console.log(process.env.MONGO_URL);
+  
+  const SECRET = process.env.SECRET || 11111
+
+  // Database connection
+  const MONGO_URI = `mongodb://${process.env.MONGO_URL}/basilico`
+  const db = await mongo.connect(MONGO_URI, { useNewUrlParser: true });
+
+  
+  graphQLServer = new ApolloServer({
+    context: ({ req, res }) => ({
+      db
+    }),
+    introspection: true,
+    playground: true,
+    resolvers,
+    typeDefs
+  });
+
+  const info = await graphQLServer.listen({port: 3001})
+  console.log(info);
+  console.log(`🚀 Server ready at http://localhost:${port}${graphQLServer.graphqlPath}`);
+};
+
 // App setup
 const app = express();
-const port = process.env.PORT || 8081
-const SECRET = process.env.SECRET || 11111
-
-// Database connection
-const MONGO_URI = `mongodb://${process.env.MONGO_URL}/basilico`
-
-mongoose
-  .connect(
-    MONGO_URI,
-    { useNewUrlParser: true }
-  )
-  .then(
-    (): void => {
-      console.log('Connection to database successful')
-    }
-  )
-  .catch(
-    (err): void => {
-      console.log(err)
-    }
-  )
-
-// Add user to context
-app.use(async (req, res, next) => {
-  await auth.addUser(req, res, next, models, SECRET)
-})
-
+const port = process.env.PORT || 3000;
 // Logger
 app.use(morgan('dev'))
 
@@ -53,14 +53,10 @@ const options: cors.CorsOptions = {
 };
 
 app.use(cors(options))
+app.get("/start", (req, res, next) => {
+  startGraphql().then(() => res.status(200).send("all good man")).catch(next);
+});
 
-// Apply GraphQL server
-const httpServer = createServer(app)
-graphQLServer.applyMiddleware({ app })
-graphQLServer.installSubscriptionHandlers(httpServer)
-
-// Wrap the Express server
-httpServer.listen({ port }, () => {
-  console.log(`🚀 Server ready at http://localhost:${port}${graphQLServer.graphqlPath}`)
-  console.log(`🚀 Subscriptions ready at ws://localhost:${port}${graphQLServer.subscriptionsPath}`)
-})
+app.listen(port, () => {
+  console.log("started");
+});

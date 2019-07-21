@@ -6,10 +6,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const graphql_tag_1 = __importDefault(require("graphql-tag"));
 const baseTypes = graphql_tag_1.default `
   type Query {
-    _empty: String
+    user: User
+  }
+  type User {
+    id: String
+    firstname: String
+    lastname: String
+  }
+  input UserInput {
+    firstname: String
+    lastname: String
   }
   type Mutation {
-    _empty: String
+    createUser(user: UserInput!): User
   }
 `;
 exports.typeDefs = [baseTypes];

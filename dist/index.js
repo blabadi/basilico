@@ -21,34 +21,36 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Imports
 const cors_1 = __importDefault(require("cors"));
 const dotenv = __importStar(require("dotenv"));
-const express_1 = __importDefault(require("express"));
-const http_1 = require("http");
-const morgan_1 = __importDefault(require("morgan"));
-const mongoose_1 = __importDefault(require("mongoose"));
-const schema_1 = __importDefault(require("./graphql/schema"));
-const auth_1 = __importDefault(require("./services/auth"));
-const index_1 = __importDefault(require("./models/index"));
-// Environment variables
 const env = dotenv.config();
-console.log(process.env.MONGO_URL);
+const express_1 = __importDefault(require("express"));
+const morgan_1 = __importDefault(require("morgan"));
+const mongodb_1 = __importDefault(require("mongodb"));
+const apollo_server_1 = require("apollo-server");
+const resolvers_1 = __importDefault(require("./graphql/resolvers"));
+const types_1 = require("./graphql/types");
+let graphQLServer;
+const startGraphql = () => __awaiter(this, void 0, void 0, function* () {
+    console.log(process.env.MONGO_URL);
+    const SECRET = process.env.SECRET || 11111;
+    // Database connection
+    const MONGO_URI = `mongodb://${process.env.MONGO_URL}/basilico`;
+    const db = yield mongodb_1.default.connect(MONGO_URI, { useNewUrlParser: true });
+    graphQLServer = new apollo_server_1.ApolloServer({
+        context: ({ req, res }) => ({
+            db
+        }),
+        introspection: true,
+        playground: true,
+        resolvers: resolvers_1.default,
+        typeDefs: types_1.typeDefs
+    });
+    const info = yield graphQLServer.listen({ port: 3001 });
+    console.log(info);
+    console.log(`🚀 Server ready at http://localhost:${port}${graphQLServer.graphqlPath}`);
+});
 // App setup
 const app = express_1.default();
-const port = process.env.PORT || 8081;
-const SECRET = process.env.SECRET || 11111;
-// Database connection
-const MONGO_URI = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASS}${process.env.MONGO_URL}`;
-mongoose_1.default
-    .connect(MONGO_URI, { useNewUrlParser: true })
-    .then(() => {
-    console.log('Connection to database successful');
-})
-    .catch((err) => {
-    console.log(err);
-});
-// Add user to context
-app.use((req, res, next) => __awaiter(this, void 0, void 0, function* () {
-    yield auth_1.default.addUser(req, res, next, index_1.default, SECRET);
-}));
+const port = process.env.PORT || 3000;
 // Logger
 app.use(morgan_1.default('dev'));
 // CORS
@@ -59,13 +61,10 @@ const options = {
     preflightContinue: false
 };
 app.use(cors_1.default(options));
-// Apply GraphQL server
-const httpServer = http_1.createServer(app);
-schema_1.default.applyMiddleware({ app });
-schema_1.default.installSubscriptionHandlers(httpServer);
-// Wrap the Express server
-httpServer.listen({ port }, () => {
-    console.log(`🚀 Server ready at http://localhost:${port}${schema_1.default.graphqlPath}`);
-    console.log(`🚀 Subscriptions ready at ws://localhost:${port}${schema_1.default.subscriptionsPath}`);
+app.get("/start", (req, res, next) => {
+    startGraphql().then(() => res.status(200).send("all good man")).catch(next);
+});
+app.listen(port, () => {
+    console.log("started");
 });
 //# sourceMappingURL=index.js.map
