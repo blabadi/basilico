@@ -6,9 +6,10 @@ import express from 'express'
 import { createServer } from 'http'
 import morgan from 'morgan'
 import mongo from "mongodb";
-import { ApolloServer } from "apollo-server";
+import { ApolloServer, makeExecutableSchema, mergeSchemas } from "apollo-server";
 import resolvers from "./graphql/resolvers";
 import { typeDefs } from "./graphql/types";
+import { GraphQLString, GraphQLObjectType, GraphQLSchema, GraphQLInt, GraphQLNamedType, GraphQLInputObjectType } from "graphql";
 
 let graphQLServer: ApolloServer | undefined;
 
@@ -22,6 +23,61 @@ const startGraphql = async () => {
   const MONGO_URI = `mongodb://${process.env.MONGO_URL}/basilico`
   const db = await mongo.connect(MONGO_URI, { useNewUrlParser: true });
 
+  var userType = new GraphQLObjectType({
+    name: 'UserType',
+    fields: {
+      greetingOne: { type: GraphQLString },
+      greetingTwo: { type: GraphQLString },
+    }
+  });
+
+  var queryType = new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+      greetingUser: {
+        type: userType,
+        args: {
+          userName: { type: GraphQLString },
+          bornMonth: { type: GraphQLInt }
+        },
+        resolve: function (_, {userName, bornMonth}) {
+          var date = new Date();
+          var daysLeft = bornMonth - (date.getMonth() + 1);
+          daysLeft = daysLeft < 0 ? daysLeft + 12 : daysLeft;
+          return {
+            greetingOne: `Hello ${userName}`,
+            greetingTwo: `Your birthday is comming in ${daysLeft} month(s)`
+          };
+        }
+      }
+    }
+  });
+
+
+
+  const schemaApollo = makeExecutableSchema({typeDefs});
+
+  const mutationType = new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+      saveUser: {
+        // return type
+        type: GraphQLString,
+        args: {
+          userInput: { type: schemaApollo.getTypeMap()["UserInput"] as GraphQLInputObjectType },
+        },
+        resolve: function (_, arg: any) {
+          console.log(`saveUser mutation called args: ${arg}`)
+          return "OK!";
+        }
+      }    
+    }
+  });
+
+  const schema: GraphQLSchema = new GraphQLSchema({
+    mutation: mutationType,
+    query: queryType
+  });
   
   graphQLServer = new ApolloServer({
     context: ({ req, res }) => ({
@@ -29,8 +85,9 @@ const startGraphql = async () => {
     }),
     introspection: true,
     playground: true,
-    resolvers,
-    typeDefs
+    schema: mergeSchemas({
+      schemas: [schemaApollo, schema]
+    })
   });
 
   const info = await graphQLServer.listen({port: 3001})
@@ -59,4 +116,5 @@ app.get("/start", (req, res, next) => {
 
 app.listen(port, () => {
   console.log("started");
+  startGraphql();
 });

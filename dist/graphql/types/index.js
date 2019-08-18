@@ -8,17 +8,20 @@ const baseTypes = graphql_tag_1.default `
   type Query {
     user: User
   }
-  type User {
-    id: String
+  
+  interface Entity {
+    id: ID
+  }
+
+  type User implements Entity {
+    id: ID
     firstname: String
     lastname: String
   }
+
   input UserInput {
     firstname: String
     lastname: String
-  }
-  type Mutation {
-    createUser(user: UserInput!): User
   }
 `;
 exports.typeDefs = [baseTypes];

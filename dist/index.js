@@ -66,5 +66,6 @@ app.get("/start", (req, res, next) => {
 });
 app.listen(port, () => {
     console.log("started");
+    startGraphql();
 });
 //# sourceMappingURL=index.js.map

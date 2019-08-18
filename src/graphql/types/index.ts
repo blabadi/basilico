@@ -1,20 +1,19 @@
 import gql from 'graphql-tag'
 
 const baseTypes = gql`
-  type Query {
-    user: User
+  interface Entity {
+    id: ID
   }
-  type User {
-    id: String
+
+  type User implements Entity {
+    id: ID
     firstname: String
     lastname: String
   }
+
   input UserInput {
     firstname: String
     lastname: String
-  }
-  type Mutation {
-    createUser(user: UserInput!): User
   }
 `
 
